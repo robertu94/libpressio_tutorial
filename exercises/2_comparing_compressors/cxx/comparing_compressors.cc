@@ -34,7 +34,7 @@ run_compressor(std::tuple<double, std::string> const& args) {
     compressor->set_options({
         {"pressio:metric", "composite"s},
         {"composite:plugins", std::vector{"time"s, "size"s, "error_stat"s, "external"s}},
-        {"external:config_name", std::format("{}-{}", compressor_id, bound)},
+        {"external:config_name", fmt::format("{}-{}", compressor_id, bound)},
         {"external:command", SCRIPTDIR "visualize.py"s}
     });
     if(compressor->compress(input, &compressed) < 0) {
