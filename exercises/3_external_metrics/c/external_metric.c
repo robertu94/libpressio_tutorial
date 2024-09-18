@@ -16,7 +16,7 @@ struct cmdline_args {
   enum pressio_dtype type;
   const char *input, *output, *config_name;
 };
-struct cmdline_args* parse_args();
+struct cmdline_args* parse_args(int argc, char* argv[]);
 struct cmdline_args* cmdline_args_new();
 void cmdline_args_free(struct cmdline_args*);
 
@@ -105,6 +105,8 @@ struct cmdline_args* parse_args(int argc, char* argv[]) {
 
   int option_index = 0;
   int opt;
+  //silence unknown argument warnings since future versions of libpressio may provide more arguments
+  opterr = 0;
   while((opt = getopt_long(argc, argv, "", long_options, &option_index)) != -1) {
     switch(opt) {
       case 'c':

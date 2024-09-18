@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.18)
 project(exercise5)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 find_package(std_compat REQUIRED)
 find_package(LibPressio REQUIRED)
 
@@ -14,6 +16,8 @@ target_link_libraries(libpressio_runlength_base PUBLIC LibPressio::libpressio ru
 
 add_executable(test_pressio_base test_pressio_base.cc)
 target_link_libraries(test_pressio_base PRIVATE libpressio_runlength_base)
+add_executable(test_pressio_solution test_pressio_base.cc)
+target_link_libraries(test_pressio_solution PRIVATE libpressio_runlength_solution)
 
 add_executable(test_runlength test_runlength.cc)
 target_link_libraries(test_runlength PRIVATE runlength)

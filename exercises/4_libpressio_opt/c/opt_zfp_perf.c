@@ -4,9 +4,6 @@
 #include <libpressio_meta.h>
 #include <libpressio_ext/io/posix.h>
 
-struct pressio_data* data_from_array(double* values, size_t n) {
-}
-
 int main(int argc, char *argv[])
 {
   libpressio_register_all();

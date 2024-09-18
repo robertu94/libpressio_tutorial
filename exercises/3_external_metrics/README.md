@@ -1,6 +1,6 @@
 # 3. External Metrics
 
-The goal of this part of the tutorial is to learn the basics of writing an external metric that can be used to analyze the difference between compressors.  This part of the tutorial is implemented in C and Python with the external metrics script being implemented in both C and Python.
+The goal of this part of the tutorial is to learn the basics of writing an external metric that can be used to analyze the difference between compressors.  This part of the tutorial is implemented in C, C++, and Python with the external metrics script being implemented in both C and Python.
 
 In this directory you should have a couple of files:
 

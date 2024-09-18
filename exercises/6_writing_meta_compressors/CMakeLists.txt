@@ -12,3 +12,5 @@ target_link_libraries(pressio_typeswitch_solution PUBLIC LibPressio::libpressio)
 
 add_executable(test_pressio_base test_pressio_base.cc)
 target_link_libraries(test_pressio_base PUBLIC pressio_typeswitch_base)
+add_executable(test_pressio_solution test_pressio_base.cc)
+target_link_libraries(test_pressio_solution PUBLIC pressio_typeswitch_solution)

@@ -18,7 +18,7 @@ parser.add_argument("--input")
 parser.add_argument("--decompressed")
 parser.add_argument("--dim", type=int, action="append")
 parser.add_argument("--type", type=lambda x: TYPES[x], choices=list(TYPES.values()))
-args = parser.parse_args()
+args = parser.parse_known_args()[0]
 
 def nonzero_mean(data):
     return data[data != 0].mean()
@@ -26,8 +26,9 @@ def nonzero_mean(data):
 
 if args.api is not None:
     # compute the metric
-    input_data = np.fromfile(args.input, dtype=args.type).reshape(*args.dim)
-    output_data = np.fromfile(args.decompressed, dtype=args.type).reshape(*args.dim)
+    dims = list(reversed(args.dim))
+    input_data = np.fromfile(args.input, dtype=args.type).reshape(*dims)
+    output_data = np.fromfile(args.decompressed, dtype=args.type).reshape(*dims)
 
     pre = nonzero_mean(input_data.astype(np.float64))
     post = nonzero_mean(output_data.astype(np.float64))

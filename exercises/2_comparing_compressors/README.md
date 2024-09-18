@@ -1,6 +1,6 @@
 # 2. Comparing Compressors
 
-The goal of this part of the tutorial is to understand how write code that targets multiple compressors simultaniously.  This section of the tutorial has examples in Python.
+The goal of this part of the tutorial is to understand how write code that targets multiple compressors simultaniously.  This section of the tutorial has examples in Python and C++.
 
 In the directory, you should have the following files:
 
@@ -101,7 +101,7 @@ First run `./compare_compressors.py`.  You should get some output that looks lik
 
 As you can see, we have detailed statistics comparing ZFP and SZ.  You will also notice that the `figures` directory has been populated with histograms of the errors introduced, and spatial plots showing were errors where introduced.  The figures directory was popluated by the `visualize.py` script and demonstrates the power of custom user-defined metrics.
 
-Now to how did we do this.  In the `comparing_compressors` examples we use MPI4py's MPICommExecutor to run a series of different configurations on different MPI ranks.
+Now to how did we do this.  In the `comparing_compressors` examples we use MPI4py's MPICommExecutor or `libdistributed` in C++ to run a series of different configurations on different MPI ranks.
 We have a function that `make_config` generates a configuration from an interator over the set of configurations wer are interested in.  From that, we can configure the compressor in the `run_compressor` function.
 
 ## Exercises

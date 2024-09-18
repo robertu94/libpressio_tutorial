@@ -44,26 +44,27 @@ def select_slice(arr: np.ndarray) -> np.ndarray:
 
 def plot_data(args):
     print(args, file=sys.stderr)
+    dims = list(reversed(args.dim))
     # load the data
-    uncompressed = np.fromfile(args.input, dtype=args.type).reshape(args.dim)
-    decompressed = np.fromfile(args.decompressed, dtype=args.type).reshape(args.dim)
-    error_max = uncompressed.max() - uncompressed.min()
-    vmin = uncompressed.min() - .1*error_max
-    vmax = uncompressed.max() + .1*error_max
+    uncompressed = np.fromfile(args.input, dtype=args.type).reshape(dims)
+    decompressed = np.fromfile(args.decompressed, dtype=args.type).reshape(dims)
+    orig_value_range = uncompressed.max() - uncompressed.min()
+    vmin = uncompressed.min() - .1*orig_value_range
+    vmax = uncompressed.max() + .1*orig_value_range
 
     uncompressed = select_slice(uncompressed)
     decompressed = select_slice(decompressed)
     errors = uncompressed - decompressed
 
     fig, ax = plt.subplots()
-    ax.hist(errors.ravel(), range=(-.008*error_max, .008*error_max), bins=100)
+    ax.hist(errors.ravel(), range=(-.008*orig_value_range, .008*orig_value_range), bins=100)
     ax.set_title(args.config_name)
     fig.savefig(WORKDIR / "figures" / (args.config_name + "-hist.png"))
 
     # plot the error in place
     fig, ax = plt.subplots()
     ax.set_title(args.config_name)
-    ax.imshow(np.abs(errors), vmin=0, vmax=error_max*.01)
+    ax.imshow(np.abs(errors), vmin=0, vmax=orig_value_range*.01)
     fig.savefig(WORKDIR / "figures" / (args.config_name + "-err.png"))
 
     # plot a side-by-side visualization
