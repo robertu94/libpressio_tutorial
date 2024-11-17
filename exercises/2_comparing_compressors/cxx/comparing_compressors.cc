@@ -8,10 +8,6 @@
 #include <libpressio_ext/cpp/libpressio.h>
 #include <libpressio_ext/cpp/serializable.h>
 #include <libpressio_ext/cpp/printers.h>
-#include <fmt/std.h>
-#include <fmt/ostream.h>
-#include <fmt/base.h>
-#include <fmt/format.h>
 
 
 template<class... Ts>
@@ -26,6 +22,11 @@ pressio_data* input;
 
 eval_result
 run_compressor(std::tuple<double, std::string> const& args) {
+    auto format = [](std::string const& compressor_id, double bound) -> std::string {
+        std::stringstream ss;
+        ss << compressor_id << '-' << bound;
+        return ss.str();
+    };
     auto const& [bound, compressor_id] = args;
     pressio library;
     pressio_data compressed = pressio_data::empty(pressio_byte_dtype, {});
@@ -34,7 +35,7 @@ run_compressor(std::tuple<double, std::string> const& args) {
     compressor->set_options({
         {"pressio:metric", "composite"s},
         {"composite:plugins", std::vector{"time"s, "size"s, "error_stat"s, "external"s}},
-        {"external:config_name", fmt::format("{}-{}", compressor_id, bound)},
+        {"external:config_name", format(compressor_id, bound)},
         {"external:command", SCRIPTDIR "visualize.py"s}
     });
     if(compressor->compress(input, &compressed) < 0) {
@@ -63,7 +64,7 @@ int main(int argc, char* argv[]) {
     auto metadata = pressio_data::empty(pressio_float_dtype, {500,500,100});
     input = io->read(&metadata);
     if(!input) {
-        fmt::println("failed to read input {}", io->error_msg());
+        std::cerr << "failed to read input {}" << io->error_msg() << std::endl;
         MPI_Abort(MPI_COMM_WORLD, 1);
     }
 
@@ -78,7 +79,7 @@ int main(int argc, char* argv[]) {
                     std::cout << s << std::endl;
                 },
                 [&](failure const& f) {
-                    fmt::println("failed: ({}): {}", f.first, f.second);
+                    std::cerr << "failed: (" << f.first << "): " << f.second << std::endl;
                     stop_token.request_stop();
                 }
             }, result);

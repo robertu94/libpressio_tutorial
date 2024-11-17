@@ -17,8 +17,8 @@ struct pressio_typeswitch : public libpressio_compressor_plugin {
   }
   pressio_options get_configuration_impl() const override {
     pressio_options opts;
-    opts.copy_from(integral->get_configuration());
-    opts.copy_from(floating->get_configuration());
+    set_meta_configuration(opts, "typeswitch:integral", compressor_plugins(), integral);
+    set_meta_configuration(opts, "typeswitch:floating", compressor_plugins(), floating);
     set(opts, "pressio:thread_safe", 
           std::min(
           pressio_configurable::get_threadsafe(*integral),
@@ -57,8 +57,16 @@ struct pressio_typeswitch : public libpressio_compressor_plugin {
   }
 
   void set_name_impl(std::string const& name) override {
-    integral->set_name(name + "/" + integral->prefix());
-    floating->set_name(name + "/" + floating->prefix());
+    if(!name.empty()) {
+        integral->set_name(name + "/" + integral->prefix());
+        floating->set_name(name + "/" + floating->prefix());
+    } else {
+        integral->set_name(name);
+        floating->set_name(name);
+    }
+  }
+  std::vector<std::string> children_impl() const final {
+      return { floating->get_name(), integral->get_name() };
   }
 
   pressio_options get_metrics_results_impl() const override {

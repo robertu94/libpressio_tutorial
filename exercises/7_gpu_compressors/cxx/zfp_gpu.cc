@@ -21,12 +21,12 @@ int main(int argc, char *argv[])
   printf("%s\n", DATADIR "/CLOUDf48.bin.f32");
 
   //read in the dataset
-  std::vector<size_t> dims{500, 500, 100};
-  domain_manager().set_options({{"domain:metrics", {"print"s}}});
+  std::vector<size_t> const dims{500, 500, 100};
+  //domain_manager().set_options({{"domain:metrics", {"print"s}}});
   pressio_data metadata = pressio_data::owning(pressio_float_dtype, dims, domain_plugins().build("cudamallochost"));
   pressio_data* input_data = pressio_io_data_path_read(&metadata, DATADIR "/CLOUDf48.bin.f32");
   pressio_data input_data_shared = domain_manager().make_readable(domain_plugins().build("cudamalloc"), std::move(*input_data));
-  pressio_data output_shared = pressio_data::clone(input_data_shared);
+  pressio_data output_shared = pressio_data::owning(input_data_shared);
 
   //configure compressor
   double rate = 16.0;

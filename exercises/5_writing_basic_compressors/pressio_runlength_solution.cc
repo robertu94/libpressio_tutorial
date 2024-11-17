@@ -52,8 +52,9 @@ struct pressio_runlength : public libpressio_compressor_plugin {
     return opts;
   }
 
-  int compress_impl(pressio_data const* input, pressio_data* output) override {
-    *output = pressio_data_for_each<pressio_data>(*input, run_encode{value_to_encode});
+  int compress_impl(pressio_data const* real_input, pressio_data* output) override {
+    pressio_data input = domain_manager().make_readable(domain_plugins().build("malloc"), *real_input);
+    *output = pressio_data_for_each<pressio_data>(input, run_encode{value_to_encode});
     return 0;
   }
   int decompress_impl(pressio_data const* input, pressio_data* output) override {

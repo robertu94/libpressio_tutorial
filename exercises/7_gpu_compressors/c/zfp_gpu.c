@@ -4,12 +4,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-void lp_cuda_free(void* ptr, void* metadata) {
-  cudaFree(ptr);
-}
-void lp_cuda_freehost(void* ptr, void* metadata) {
-  cudaFreeHost(ptr);
-}
 
 void lp_check_cuda(cudaError_t err) {
   if(err != cudaSuccess) {
@@ -38,14 +32,14 @@ int main(int argc, char *argv[])
   float* d_input;
   cudaMallocHost((void**)&h_input, buf_size);
   cudaMalloc((void**)&d_input, buf_size);
-  struct pressio_data* metadata = pressio_data_new_move(pressio_float_dtype, h_input, ndims, dims, lp_cuda_freehost, NULL);
+  struct pressio_data* metadata = pressio_data_new_move(pressio_float_dtype, h_input, ndims, dims, pressio_data_cudahost_free_fn, NULL);
   struct pressio_data* input_data = pressio_io_data_path_read(metadata, DATADIR "/CLOUDf48.bin.f32");
   cudaMemcpy(d_input, pressio_data_ptr(input_data, NULL), buf_size, cudaMemcpyHostToDevice);
-  struct pressio_data* input_data_shared = pressio_data_new_move(pressio_float_dtype, d_input, ndims, dims, lp_cuda_free, NULL);
+  struct pressio_data* input_data_shared = pressio_data_new_move(pressio_float_dtype, d_input, ndims, dims, pressio_data_cuda_free_fn, NULL);
 
   float* d_output;
   cudaMalloc((void**)&d_output, buf_size);
-  struct pressio_data* output_shared = pressio_data_new_move(pressio_float_dtype, d_output, ndims, dims, lp_cuda_free, NULL);
+  struct pressio_data* output_shared = pressio_data_new_move(pressio_float_dtype, d_output, ndims, dims, pressio_data_cuda_free_fn, NULL);
 
 
   //configure compressor
@@ -73,7 +67,7 @@ int main(int argc, char *argv[])
   //allocate the compressed buffer
   float* d_compressed;
   cudaMalloc((void**)&d_compressed, comp_buf_size);
-  struct pressio_data* comp_shared = pressio_data_new_move(pressio_byte_dtype, d_compressed, 1, &comp_buf_size, lp_cuda_free, NULL);
+  struct pressio_data* comp_shared = pressio_data_new_move(pressio_byte_dtype, d_compressed, 1, &comp_buf_size, pressio_data_cuda_free_fn, NULL);
   // it is also possible to use gpu direct storage here, but my experience is it's buggy
   // and requires every part of the stack to support it
   // libpressio provides a helper io module called "cufile"
