@@ -2,7 +2,7 @@
 
 from pathlib import Path
 from pprint import pprint
-import json
+import csv
 import libpressio
 import numpy as np
 import itertools
@@ -21,8 +21,8 @@ configs = [{
         "bound": bound
     } for bound, compressor_id in
         itertools.product(
-            np.logspace(-6, -1, num=6),
-            ["sz", "zfp"]
+            np.logspace(-7, -3, num=5),
+            ["sz", "sz3", "mgard", "zfp"]
         )
     ]
 
@@ -54,6 +54,17 @@ def run_compressor(args):
         "metrics": metrics
     }
 
-with MPICommExecutor() as pool:
-    for result in pool.map(run_compressor, configs, unordered=True):
-        pprint(result)
+with  open(Path(__file__).absolute().parent.parent / "figures/results.csv", 'w') as csvfile:
+    with MPICommExecutor() as pool:
+        fieldnames = ['compression_ratio', 'bound', "psnr", "compressor_id"]
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        writer.writeheader()
+        for result in pool.map(run_compressor, configs, unordered=True):
+            writer.writerow({
+                "compression_ratio": result['metrics']['size:compression_ratio'],
+                "psnr": result['metrics']['error_stat:psnr'],
+                "compressor_id": result['compressor_id'],
+                "bound": result['bound'],
+            })
+            pprint(result)
+

@@ -4,6 +4,7 @@
 #include <cmath>
 #include <utility>
 #include <variant>
+#include <fstream>
 #include <libdistributed/libdistributed_work_queue.h>
 #include <libpressio_ext/cpp/libpressio.h>
 #include <libpressio_ext/cpp/serializable.h>
@@ -13,7 +14,7 @@
 template<class... Ts>
 struct overloaded : Ts... { using Ts::operator()...; };
 using namespace std::string_literals;
-using success = pressio_options;
+using success = std::tuple<std::tuple<double, std::string>, pressio_options>;
 using failure = std::pair<int, std::string>;
 using eval_result = std::variant<success, failure>;
 
@@ -36,7 +37,8 @@ run_compressor(std::tuple<double, std::string> const& args) {
         {"pressio:metric", "composite"s},
         {"composite:plugins", std::vector{"time"s, "size"s, "error_stat"s, "external"s}},
         {"external:config_name", format(compressor_id, bound)},
-        {"external:command", SCRIPTDIR "visualize.py"s}
+        {"external:command", SCRIPTDIR "visualize.py"s},
+        {"pressio:abs", bound}
     });
     if(compressor->compress(input, &compressed) < 0) {
         return failure{compressor->error_code(), compressor->error_msg()};
@@ -44,14 +46,14 @@ run_compressor(std::tuple<double, std::string> const& args) {
     if(compressor->decompress(&compressed, &output) < 0) {
         return failure{compressor->error_code(), compressor->error_msg()};
     }
-    return success{compressor->get_metrics_results()};
+    return success{args,compressor->get_metrics_results()};
 }
 
 int main(int argc, char* argv[]) {
     MPI_Init(&argc, &argv);
     std::vector<std::tuple<double, std::string>> configurations;
-    for(auto compressor: std::vector{"sz", "zfp"}) {
-    for(auto exp = -6; exp < -1; ++exp) {
+    for(auto compressor: std::vector{"sz", "zfp", "mgard", "sz3"}) {
+    for(auto exp = -7; exp <= -3; ++exp) {
         double bound = std::pow(10, exp);
         configurations.emplace_back(bound, compressor);
     }}
@@ -68,15 +70,21 @@ int main(int argc, char* argv[]) {
         MPI_Abort(MPI_COMM_WORLD, 1);
     }
 
+    std::ofstream outfile{ SCRIPTDIR "figures/results.csv" };
+    outfile << "compressor_id,bound,psnr,compression_ratio" << std::endl;
     distributed::queue::work_queue(
         MPI_COMM_WORLD,
         std::begin(configurations),
         std::end(configurations),
         run_compressor,
-        [](eval_result const& result, auto& stop_token) {
+        [&](eval_result const& result, auto& stop_token) {
             std::visit(overloaded{
-                [](success const& s) {
-                    std::cout << s << std::endl;
+                [&](success const& s) {
+                    auto const& [config, metrics] = s;
+                    const double cr = metrics.get("size:compression_ratio").get_value<double>();
+                    const double psnr = metrics.get("error_stat:psnr").get_value<double>();
+                    std::cout << std::get<1>(s) << std::endl;
+                    outfile << std::get<1>(config) << ',' << std::get<0>(config) << ',' << psnr << ',' << cr << std::endl;
                 },
                 [&](failure const& f) {
                     std::cerr << "failed: (" << f.first << "): " << f.second << std::endl;
