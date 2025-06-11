@@ -21,7 +21,7 @@ int main(int argc, char *argv[])
 
   //configure metrics for the compressor
   struct pressio_options* metrics_options = pressio_options_new();
-  const char* metrics_ids[] = {"time", "size", "error_stat"};
+  const char* metrics_ids[] = {"size", "error_stat", "time",};
   size_t n_metrics_ids = sizeof(metrics_ids)/sizeof(metrics_ids[0]);
   pressio_options_set_string(metrics_options, "pressio:metric", "composite");
   pressio_options_set_strings(metrics_options, "composite:plugins", n_metrics_ids, metrics_ids);

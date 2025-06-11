@@ -34,7 +34,7 @@ def run_compressor(args):
         # configure the set of metrics to be gathered
         "early_config": {
             "pressio:metric": "composite",
-            "composite:plugins": ["time", "size", "error_stat", "external"],
+            "composite:plugins": ["size", "error_stat", "external", "time"],
             "external:config_name": f"{args['compressor_id']}-{args['bound']:1.1e}",
             "external:command": str(Path(__file__).absolute().parent.parent / "visualize.py")
         },

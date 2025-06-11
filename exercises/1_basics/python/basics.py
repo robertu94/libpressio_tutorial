@@ -17,7 +17,7 @@ for bound in np.logspace(start=-6, stop=-1, num=6):
         # configure the set of metrics to be gathered
         "early_config": {
             "pressio:metric": "composite",
-            "composite:plugins": ["time", "size", "error_stat"]
+            "composite:plugins": ["size", "error_stat", "time"]
         },
         # configure SZ
         "compressor_config": {

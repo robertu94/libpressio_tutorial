@@ -152,6 +152,10 @@ bound=1e-06, metrics={
 ... <snipped remaining output>
 ```
 
+Note that ordering can matter.  Metrics are called from in order from first to last then last to first around each call.
+This means if you want to measure time, you need to do that as the **last** call in composite plugins.
+
+
 ## Exercises
 
 1. Review the documentation for SZ.  Try repeating the experiment in `basic.py` or `basic.c` with SZ's Value Range relative mode. What happens to the error statistics?  (note, get_compressor_options.py may help you here)

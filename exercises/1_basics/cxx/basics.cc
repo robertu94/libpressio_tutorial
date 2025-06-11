@@ -20,7 +20,7 @@ int main(int argc, char *argv[])
         compressor->set_options({
             {"pressio:abs", bound},
             {"pressio:metric", "composite"},
-            {"composite:plugins", std::vector<std::string>{"time", "size", "error_stat"}}
+            {"composite:plugins", std::vector<std::string>{"size", "error_stat", "time"}}
         });
 
         if(compressor->compress(input_data, &compressed)) {

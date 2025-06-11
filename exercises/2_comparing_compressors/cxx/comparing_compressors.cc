@@ -35,7 +35,7 @@ run_compressor(std::tuple<double, std::string> const& args) {
     pressio_compressor compressor = library.get_compressor(compressor_id);
     compressor->set_options({
         {"pressio:metric", "composite"s},
-        {"composite:plugins", std::vector{"time"s, "size"s, "error_stat"s, "external"s}},
+        {"composite:plugins", std::vector{"size"s, "error_stat"s, "external"s, "time"s}},
         {"external:config_name", format(compressor_id, bound)},
         {"external:command", SCRIPTDIR "visualize.py"s},
         {"pressio:abs", bound}
