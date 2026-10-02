@@ -1,0 +1,102 @@
+#include <libpressio.h>
+#include <libpressio_ext/io/posix.h>
+#include <cuda_runtime.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+
+void lp_check_cuda(cudaError_t err) {
+  if(err != cudaSuccess) {
+    fprintf(stderr, "%s\n", cudaGetErrorString(err));
+    exit(1);
+  }
+}
+
+int main(int argc, char *argv[])
+{
+  struct pressio* library = pressio_instance();
+  struct pressio_compressor* comp = pressio_get_compressor(library, "fsz");
+  if(comp == NULL) {
+    fprintf(stderr, "failed to load fsz: %s\n", pressio_error_msg(library));
+    exit(1);
+  }
+
+  printf("%s\n", DATADIR "/CLOUDf48.bin.f32");
+
+  //read in the dataset
+  size_t dims[] = {500, 500, 100}; //fortran order
+  size_t ndims = sizeof(dims)/sizeof(dims[0]);
+  size_t buf_size = sizeof(float);
+  for (size_t i = 0; i < ndims; ++i) {
+    buf_size *= dims[i];
+  }
+
+  float* h_input;
+  float* d_input;
+  lp_check_cuda(cudaMallocHost((void**)&h_input, buf_size));
+  lp_check_cuda(cudaMalloc((void**)&d_input, buf_size));
+  struct pressio_data* metadata = pressio_data_new_move(pressio_float_dtype, h_input, ndims, dims, pressio_data_cudahost_free_fn, NULL);
+  struct pressio_data* input_data = pressio_io_data_path_read(metadata, DATADIR "/CLOUDf48.bin.f32");
+  lp_check_cuda(cudaMemcpy(d_input, pressio_data_ptr(input_data, NULL), buf_size, cudaMemcpyHostToDevice));
+  struct pressio_data* input_data_shared = pressio_data_new_move(pressio_float_dtype, d_input, ndims, dims, pressio_data_cuda_free_fn, NULL);
+
+  float* d_output;
+  lp_check_cuda(cudaMalloc((void**)&d_output, buf_size));
+  struct pressio_data* output_shared = pressio_data_new_move(pressio_float_dtype, d_output, ndims, dims, pressio_data_cuda_free_fn, NULL);
+
+
+  //configure compressor: FSZ takes an absolute error bound
+  double abs_bound = 1e-6;
+  struct pressio_options* options = pressio_options_new();
+  pressio_options_set_double(options, "pressio:abs", abs_bound);
+  pressio_options_set_string(options, "pressio:metric", "composite");
+  const char* plugins[] ={"size","error_stat"};
+  size_t n_plugins = sizeof(plugins)/sizeof(plugins[0]);
+  pressio_options_set_strings(options, "composite:plugins", n_plugins, plugins);
+  if(pressio_compressor_set_options(comp, options)) {
+    fprintf(stderr, "failed to configure: %s\n", pressio_compressor_error_msg(comp));
+    exit(1);
+  }
+
+  //determine the size of the compressed buffer: compressing an input without data reports the maximum size
+  struct pressio_data* to_compress_size =  pressio_data_new_empty(pressio_float_dtype, ndims, dims);
+  struct pressio_data* compressed_estimate =  pressio_data_new_empty(pressio_byte_dtype, 0, NULL);
+  if(pressio_compressor_compress(comp, to_compress_size, compressed_estimate)) {
+    fprintf(stderr, "failed to estimate size: %s\n", pressio_compressor_error_msg(comp));
+    exit(1);
+  }
+  size_t comp_buf_size = pressio_data_get_bytes(compressed_estimate);
+  pressio_data_free(to_compress_size);
+  pressio_data_free(compressed_estimate);
+
+  //allocate the compressed buffer, FSZ writes into it on the GPU
+  unsigned char* d_compressed;
+  lp_check_cuda(cudaMalloc((void**)&d_compressed, comp_buf_size));
+  struct pressio_data* comp_shared = pressio_data_new_move(pressio_byte_dtype, d_compressed, 1, &comp_buf_size, pressio_data_cuda_free_fn, NULL);
+
+  if(pressio_compressor_compress(comp, input_data_shared, comp_shared)) {
+    fprintf(stderr, "failed to compress: %s\n", pressio_compressor_error_msg(comp));
+    exit(1);
+  }
+  if(pressio_compressor_decompress(comp, comp_shared, output_shared)) {
+    fprintf(stderr, "failed to decompress: %s\n", pressio_compressor_error_msg(comp));
+    exit(1);
+  }
+
+  struct pressio_options* metrics_results = pressio_compressor_get_metrics_results(comp);
+  char* metrics_results_str = pressio_options_to_string(metrics_results);
+  printf("%s\n", metrics_results_str);
+  free(metrics_results_str);
+
+  pressio_options_free(metrics_results);
+  pressio_data_free(metadata);
+  pressio_data_free(input_data);
+  pressio_data_free(comp_shared);
+  pressio_data_free(output_shared);
+  pressio_data_free(input_data_shared);
+  pressio_options_free(options);
+  pressio_compressor_release(comp);
+  pressio_release(library);
+
+  return 0;
+}
