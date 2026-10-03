@@ -24,4 +24,17 @@ Lastly, call compress and decompress.
 
 This is illustrated in `c/zfp_gpu.c`
 
+## Using FSZ
 
+`c/fsz_gpu.c`, `cxx/fsz_gpu.cc`, and `python/fsz_gpu.py` repeat the zero-copy exercise with [FSZ](https://github.com/JiajunHuang1999/FSZ), a GPU error-bounded lossy compressor.
+They need LibPressio built with `-DLIBPRESSIO_HAS_CUDA=ON -DLIBPRESSIO_HAS_FSZ=ON` (see `docs/UsingTheFSZCompressor.md` in LibPressio).
+
+FSZ is configured with the absolute error bound `pressio:abs`.
+Compressing an input without data reports the size of the compressed buffer to allocate, so no compressor specific functions are needed.
+Compressed and decompressed data stay in GPU memory. Host inputs also work and are copied to the GPU automatically.
+
+```bash
+cmake -S c -B build-c -DCMAKE_PREFIX_PATH=/path/to/install
+cmake --build build-c
+./build-c/fsz_gpu
+```
